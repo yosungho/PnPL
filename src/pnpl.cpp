@@ -10,7 +10,11 @@
 
 namespace g2o{
 
+typedef Eigen::Matrix<double,2,1,Eigen::ColMajor>   Vector2D;
+typedef Eigen::Matrix<double,3,1,Eigen::ColMajor>   Vector3D;
+typedef Eigen::Matrix<double,4,1,Eigen::ColMajor>   Vector4D;
 typedef Eigen::Matrix<double,6,1,Eigen::ColMajor>   Vector6D;
+
 class VertexSBALine : public BaseVertex<6, Vector6D>
 {
   public:
@@ -135,10 +139,12 @@ void PnPL(const std::vector<cv::Point3f>& pts3d, const std::vector<cv::Point2f>&
     int nlns = lns3d.size();
 
     // init g2o
-    g2o::BlockSolver_6_3::LinearSolverType * linearSolver;
-    linearSolver= new g2o::LinearSolverCSparse<g2o::BlockSolver_6_3::PoseMatrixType>();
-    g2o::BlockSolver_6_3 * solver_ptr = new g2o::BlockSolver_6_3(linearSolver);
-    g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
+    std::unique_ptr<g2o::BlockSolver_6_3::LinearSolverType> linear_solver;
+    linear_solver = g2o::make_unique<g2o::LinearSolverCSparse<g2o::BlockSolver_6_3::PoseMatrixType>>();
+
+    std::unique_ptr<g2o::BlockSolver_6_3> block_solver = g2o::make_unique<g2o::BlockSolver_6_3>(std::move(linear_solver));
+    g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(std::move(block_solver));
+
     g2o::SparseOptimizer optimizer;
     // optimizer.setVerbose(true);
     optimizer.setAlgorithm(solver);
